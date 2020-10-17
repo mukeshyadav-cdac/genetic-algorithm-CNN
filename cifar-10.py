@@ -1,3 +1,5 @@
+from keras.datasets import cifar10
+from deap import base, creator, tools, algorithms
 import tensorflow as tf
 from tensorflow import keras
 from keras.layers import Dense, Conv2D, Flatten
@@ -8,17 +10,14 @@ from keras.datasets import mnist
 from scipy.stats import bernoulli
 from bitstring import BitArray
 import numpy as np
+import pandas as pd
+import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-from deap import base, creator, tools, algorithms
-# download mnist data and split into train and test sets
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
 
 X_train = X_train[0:10000]
 y_train = y_train[0:10000]
-
-# reshape data to fit model
-X_train = X_train.reshape(10000, 28, 28, 1)
-X_test = X_test.reshape(10000, 28, 28, 1)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -26,10 +25,8 @@ X_test = X_test.astype('float32')
 X_train /= 255
 X_test /= 255
 
-# one-hot encode target column
 y_train = to_categorical(y_train)
 y_test = to_categorical(y_test)
-y_train[0]
 
 
 def evaulate(individual):
@@ -43,9 +40,9 @@ def evaulate(individual):
         return -50,
 
     model.add(Conv2D(first_layer_features, kernel_size=first_layer_kernel_size,
-                     activation='relu', input_shape=(28, 28, 1)))
+                     activation='relu', input_shape=(32, 32, 3)))
     model.add(Conv2D(second_layer_features,
-                     kernel_size=second_layer_kernel_size, activation='relu'))
+                     kernel_size=first_layer_kernel_size, activation='relu'))
     model.add(Flatten())
     model.add(Dense(10, activation='softmax'))
     model.summary()
@@ -56,8 +53,8 @@ def evaulate(individual):
     return his.history['accuracy'][0],
 
 
-population_size = 10
-num_generations = 20
+population_size = 8
+num_generations = 4
 gene_length = 16
 
 creator.create('FitnessMax', base.Fitness, weights=(1.0,))
